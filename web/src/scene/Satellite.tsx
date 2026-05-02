@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Group, Mesh } from "three";
+import { Group, Mesh, Vector3 } from "three";
 import type { Satellite as SatelliteType } from "../config/satellites";
 import { useGameStore } from "../state/useGameStore";
+import { satelliteWorldPositions } from "./satelliteWorldPositions";
+
+const tmpWorld = new Vector3();
 
 type Props = {
   satellite: SatelliteType;
@@ -24,6 +27,13 @@ export function Satellite({ satellite }: Props) {
     if (bodyRef.current) {
       // Gentle drift so it feels alive, but not spinning fast (panels stay readable)
       bodyRef.current.rotation.y += dt * 0.08;
+      bodyRef.current.getWorldPosition(tmpWorld);
+      let stored = satelliteWorldPositions.get(satellite.id);
+      if (!stored) {
+        stored = new Vector3();
+        satelliteWorldPositions.set(satellite.id, stored);
+      }
+      stored.copy(tmpWorld);
     }
     if (blinkRef.current) {
       const t = performance.now() * 0.003;

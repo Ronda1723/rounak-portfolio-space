@@ -39,9 +39,12 @@ type GameState = {
   activeSatellite: Satellite | null;
   /** satellite currently being hovered (for tooltip) */
   hoveredSatellite: Satellite | null;
+  /** satellite the rocket is currently within docking range of */
+  nearSatellite: Satellite | null;
   openSatellite: (s: Satellite) => void;
   closeSatellite: () => void;
   setHoveredSatellite: (s: Satellite | null) => void;
+  setNearSatellite: (s: Satellite | null) => void;
   setHazard: (level: HazardLevel, distance: number) => void;
   setSunDangerTime: (t: number) => void;
   setSunDeathDeadline: (t: number) => void;
@@ -87,6 +90,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   respawnCount: 0,
   activeSatellite: null,
   hoveredSatellite: null,
+  nearSatellite: null,
 
   setHazard: (level, distance) => set({ hazard: level, hazardDistance: distance }),
   setSunDangerTime: (t) => set({ sunDangerTime: t }),
@@ -160,4 +164,5 @@ export const useGameStore = create<GameState>((set, get) => ({
   openSatellite: (s) => set({ activeSatellite: s }),
   closeSatellite: () => set({ activeSatellite: null }),
   setHoveredSatellite: (s) => set({ hoveredSatellite: s }),
+  setNearSatellite: (s) => set({ nearSatellite: s }),
 }));

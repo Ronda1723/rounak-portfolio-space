@@ -1,3 +1,14 @@
+export type Artifact = {
+  id: string;
+  name: string;
+  /** Stone color (used by the museum scene, also as accent in the modal) */
+  color: string;
+  /** One-line description shown when the stone is selected */
+  blurb: string;
+  /** Optional longer body */
+  detail?: string;
+};
+
 export type Planet = {
   id: string;
   name: string;
@@ -21,6 +32,8 @@ export type Planet = {
   color: string;
   landRadius: number;
   voiceAliases: string[];
+  /** Theme keyword used by the landing/room scene (e.g. "desert", "verdant") */
+  terrainTheme: string;
   /** Real-world stats of the planet body this is rendered on (NASA fact sheet). */
   stats: {
     temperature: string;
@@ -36,58 +49,28 @@ export type Planet = {
     stack: string[];
     link?: { label: string; url: string };
   };
+  /** Museum stones shown when you land on this planet. */
+  artifacts: Artifact[];
 };
 
 export const SUN_RADIUS = 2.5;
 
 export const PLANETS: Planet[] = [
   {
-    id: "open-source",
-    name: "Open Source",
-    tagline: "Scattered contributions, the inner ring",
-    texture: "/assets/textures/2k_mercury.jpg",
-    size: 0.45,
-    orbitRadius: 6,
-    orbitAngle: Math.PI * 0.2,
-    orbitSpeed: 0.06,
-    spinSpeed: 0.05,
-    axialTilt: 0,
-    color: "#a08672",
-    landRadius: 1.5,
-    voiceAliases: ["open source", "mercury", "open", "first"],
-    stats: {
-      temperature: "−180 to 430 °C",
-      atmosphere: "Trace exosphere",
-      dayLength: "59 Earth days",
-      gravity: "0.38 g",
-    },
-    briefing: {
-      role: "Maintainer / contributor",
-      period: "ongoing",
-      summary:
-        "Small contributions to libraries I depend on. Fixes, docs, the occasional feature.",
-      bullets: [
-        "Bug reports with reproductions, not vibes",
-        "Docs PRs for things I had to figure out",
-        "Plugins for tools that needed one more thing",
-      ],
-      stack: ["various"],
-    },
-  },
-  {
-    id: "voicechef",
-    name: "VoiceChef",
-    tagline: "Hands-free cooking copilot",
+    id: "lazyvoice",
+    name: "LazyVoice",
+    tagline: "Voice dictation, co-founded",
     texture: "/assets/textures/2k_mars.jpg",
-    size: 0.65,
-    orbitRadius: 9,
-    orbitAngle: Math.PI * 1.1,
-    orbitSpeed: 0.045,
-    spinSpeed: 0.04,
+    size: 0.7,
+    orbitRadius: 10,
+    orbitAngle: Math.PI * 0.2,
+    orbitSpeed: 0.05,
+    spinSpeed: 0.05,
     axialTilt: 0.41,
     color: "#d65d3a",
-    landRadius: 2.0,
-    voiceAliases: ["voicechef", "voice chef", "mars", "red planet"],
+    landRadius: 2.2,
+    voiceAliases: ["lazyvoice", "lazy voice", "lazy", "dictation", "mars"],
+    terrainTheme: "desert",
     stats: {
       temperature: "−63 °C avg",
       atmosphere: "95% CO₂, thin",
@@ -95,68 +78,59 @@ export const PLANETS: Planet[] = [
       gravity: "0.38 g",
     },
     briefing: {
-      role: "Solo build",
-      period: "2024",
+      role: "Co-founder",
+      period: "ongoing",
       summary:
-        "A hands-free cooking assistant. Recipes voice-narrated, timers triggered by name, no greasy phone screens.",
+        "A voice dictation app I'm co-founding alongside the work at Smallest.ai. Hold-to-talk on macOS, sub-second transcription, and a deliberately small surface area.",
       bullets: [
-        "Voice-driven recipe walkthroughs with named timers",
-        "Local-first: works offline once a recipe is loaded",
-        "Designed for kitchen ergonomics, not phone ergonomics",
+        "Co-founded the venture, leading product + engineering",
+        "Sub-1s transcription pipeline with interim caching",
+        "Mac-first; Windows on deck",
       ],
-      stack: ["React Native", "Expo", "Whisper"],
+      stack: ["SwiftUI", "FastAPI", "Deepgram", "Railway"],
     },
-  },
-  {
-    id: "miniflow",
-    name: "MiniFlow",
-    tagline: "Workflow automation, terraformed",
-    texture: "/assets/textures/2k_earth_daymap.jpg",
-    cloudsTexture: "/assets/textures/2k_earth_clouds.jpg",
-    nightTexture: "/assets/textures/2k_earth_nightmap.jpg",
-    hasAtmosphere: true,
-    size: 0.75,
-    orbitRadius: 12,
-    orbitAngle: Math.PI * 0.55,
-    orbitSpeed: 0.035,
-    spinSpeed: 0.06,
-    axialTilt: 0.41,
-    color: "#5BC0EB",
-    landRadius: 2.4,
-    voiceAliases: ["miniflow", "mini flow", "earth", "blue planet"],
-    stats: {
-      temperature: "+15 °C avg",
-      atmosphere: "78% N₂ · 21% O₂",
-      dayLength: "24 hours",
-      gravity: "1.00 g",
-    },
-    briefing: {
-      role: "Founding designer + engineer",
-      period: "2024 — present",
-      summary:
-        "MiniFlow turns recurring spreadsheet ops into one-click automations. The desktop app reads your raw inputs, runs the pipeline, and ships the result.",
-      bullets: [
-        "Designed the canvas-first authoring UX from scratch",
-        "Shipped MacOS + Windows desktop builds via Tauri",
-        "Built the runner engine and the visual pipeline graph",
-      ],
-      stack: ["Tauri", "React", "TypeScript", "Rust", "SQLite"],
-    },
+    artifacts: [
+      {
+        id: "engine",
+        name: "Dictation Engine",
+        color: "#ff6b3d",
+        blurb: "The core STT pipeline — Nova-3 + interim cache + dispatch-on-release.",
+      },
+      {
+        id: "hotkey",
+        name: "Global Hotkey",
+        color: "#ffd089",
+        blurb: "Hold-to-talk anywhere on macOS. The whole UX hangs on this one gesture.",
+      },
+      {
+        id: "latency",
+        name: "Sub-Second Latency",
+        color: "#ffaa55",
+        blurb: "What it took to get end-to-end under a second on real networks.",
+      },
+      {
+        id: "launch",
+        name: "Launch",
+        color: "#d94432",
+        blurb: "Going from internal build to the first paying users.",
+      },
+    ],
   },
   {
     id: "smallest",
-    name: "Smallest AI",
+    name: "Smallest.ai",
     tagline: "Realtime speech for production",
     texture: "/assets/textures/2k_jupiter.jpg",
-    size: 1.45,
-    orbitRadius: 17,
-    orbitAngle: Math.PI * 1.7,
-    orbitSpeed: 0.022,
+    size: 1.5,
+    orbitRadius: 15,
+    orbitAngle: Math.PI * 0.55,
+    orbitSpeed: 0.03,
     spinSpeed: 0.08,
     axialTilt: 0.05,
     color: "#d8ad6a",
     landRadius: 3.4,
-    voiceAliases: ["smallest", "smallest ai", "jupiter", "gas giant"],
+    voiceAliases: ["smallest", "smallest ai", "jupiter", "main"],
+    terrainTheme: "industrial",
     stats: {
       temperature: "−110 °C cloud tops",
       atmosphere: "H₂ · He · CH₄",
@@ -165,16 +139,42 @@ export const PLANETS: Planet[] = [
     },
     briefing: {
       role: "Design lead",
-      period: "2023 — 2024",
+      period: "2023 — present",
       summary:
-        "Production speech infrastructure for voice agents. Owned the design system, the dashboard, and the developer-facing surface.",
+        "Production speech infrastructure for voice agents. Owned the design system, the dashboard, and the developer-facing surface — plus a handful of products that shipped during this chapter.",
       bullets: [
-        "Built the design system from zero",
-        "Shipped dashboard, playground, and docs surfaces",
+        "Built the design system from zero across docs, dashboard, playground",
         "Drove DX for the speech APIs and SDKs",
+        "Shipped multiple products inside the company arc",
       ],
       stack: ["Next.js", "Figma", "TypeScript"],
     },
+    artifacts: [
+      {
+        id: "atoms",
+        name: "Atoms",
+        color: "#ffd089",
+        blurb: "The design-system primitives that everything in the surface area is built from.",
+      },
+      {
+        id: "website",
+        name: "Smallest Website",
+        color: "#5BC0EB",
+        blurb: "The marketing site — narrative, structure, and the bones it sits on.",
+      },
+      {
+        id: "voicechef",
+        name: "VoiceChef",
+        color: "#d65d3a",
+        blurb: "Hands-free cooking copilot. Voice-driven recipes, named timers, kitchen-first.",
+      },
+      {
+        id: "lazyvoice-stone",
+        name: "LazyVoice",
+        color: "#ff6b3d",
+        blurb: "The dictation app spun out from this chapter — its own planet now.",
+      },
+    ],
   },
   {
     id: "uxie",
@@ -183,14 +183,15 @@ export const PLANETS: Planet[] = [
     texture: "/assets/textures/2k_saturn.jpg",
     ringTexture: "/assets/textures/2k_saturn_ring_alpha.png",
     size: 1.2,
-    orbitRadius: 22,
+    orbitRadius: 20,
     orbitAngle: Math.PI * 0.85,
-    orbitSpeed: 0.016,
+    orbitSpeed: 0.018,
     spinSpeed: 0.07,
     axialTilt: 0.46,
     color: "#e6c98a",
-    landRadius: 3.2,
-    voiceAliases: ["uxie", "saturn", "ring", "ringed"],
+    landRadius: 3.0,
+    voiceAliases: ["uxie", "saturn", "ringed"],
+    terrainTheme: "stone",
     stats: {
       temperature: "−140 °C avg",
       atmosphere: "H₂ · He, banded clouds",
@@ -209,38 +210,88 @@ export const PLANETS: Planet[] = [
       ],
       stack: ["SwiftUI", "FastAPI", "Deepgram", "Railway"],
     },
+    artifacts: [
+      {
+        id: "design",
+        name: "Design",
+        color: "#e6c98a",
+        blurb: "The interface vocabulary — hold-to-talk gestures, the menubar surface, the modes.",
+      },
+      {
+        id: "implementation",
+        name: "Implementation",
+        color: "#9aa3aa",
+        blurb: "SwiftUI on the front, FastAPI + Deepgram + Railway on the back. Single-tag releases for Mac + Windows.",
+      },
+      {
+        id: "problem",
+        name: "What I'm Solving For",
+        color: "#5BC0EB",
+        blurb: "The wedge between fast-thinking and slow-typing — and why dictation is a small piece of it.",
+      },
+    ],
   },
   {
-    id: "side-quest",
-    name: "Side Quest",
-    tagline: "An experiment that grew",
-    texture: "/assets/textures/2k_neptune.jpg",
+    id: "growth",
+    name: "Growth",
+    tagline: "Distribution and revenue",
+    texture: "/assets/textures/2k_earth_daymap.jpg",
+    cloudsTexture: "/assets/textures/2k_earth_clouds.jpg",
+    nightTexture: "/assets/textures/2k_earth_nightmap.jpg",
+    hasAtmosphere: true,
     size: 0.95,
-    orbitRadius: 27,
+    orbitRadius: 26,
     orbitAngle: Math.PI * 1.4,
-    orbitSpeed: 0.011,
-    spinSpeed: 0.05,
-    axialTilt: 0.49,
-    color: "#3a5fd8",
+    orbitSpeed: 0.013,
+    spinSpeed: 0.06,
+    axialTilt: 0.41,
+    color: "#5BC0EB",
     landRadius: 2.6,
-    voiceAliases: ["side quest", "side", "neptune", "blue", "experiment"],
+    voiceAliases: ["growth", "revenue", "earth", "blue planet"],
+    terrainTheme: "verdant",
     stats: {
-      temperature: "−200 °C avg",
-      atmosphere: "H₂ · He · CH₄",
-      dayLength: "16 h 6 m",
-      gravity: "1.14 g",
+      temperature: "+15 °C avg",
+      atmosphere: "78% N₂ · 21% O₂",
+      dayLength: "24 hours",
+      gravity: "1.00 g",
     },
     briefing: {
-      role: "Solo experiment",
-      period: "2025",
+      role: "Growth + revenue",
+      period: "ongoing",
       summary:
-        "A weekend hack that turned into something more. Half-finished, half-shipped, fully learned-from.",
+        "The work that turned products into revenue. Distribution, content, partnerships, and the metrics that came out the other end.",
       bullets: [
-        "Started as a constraint-driven generative system",
-        "Pivoted twice; kept the parts that worked",
-        "Open-sourced once it stopped embarrassing me",
+        "Owned distribution + content for the company surface",
+        "Drove the funnels that compounded into ARR",
+        "Built the partnership pipeline from outbound first contact",
       ],
-      stack: ["TBD"],
+      stack: ["GTM", "Content", "Partnerships"],
     },
+    artifacts: [
+      {
+        id: "content",
+        name: "Content & SEO",
+        color: "#7AFFAD",
+        blurb: "The writing and the search surface — what brought people in cold.",
+      },
+      {
+        id: "partnerships",
+        name: "Partnerships",
+        color: "#5BC0EB",
+        blurb: "Outbound to deal — the relationships that compounded into channels.",
+      },
+      {
+        id: "revenue",
+        name: "Revenue",
+        color: "#ffd089",
+        blurb: "The dollars at the end of the funnel and what they came from.",
+      },
+      {
+        id: "playbook",
+        name: "Playbook",
+        color: "#a08672",
+        blurb: "What I'd do again, what I wouldn't, and the order I'd do it in.",
+      },
+    ],
   },
 ];

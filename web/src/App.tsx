@@ -5,6 +5,7 @@ import { DockedPanel } from "./ui/DockedPanel";
 import { ProjectModal } from "./ui/ProjectModal";
 import { SatelliteModal } from "./ui/SatelliteModal";
 import { SatelliteTooltip } from "./ui/SatelliteTooltip";
+import { SatelliteDockPrompt } from "./ui/SatelliteDockPrompt";
 import { WarpOverlay } from "./ui/WarpOverlay";
 import { HazardWarning } from "./ui/HazardWarning";
 import { PlanetTooltip } from "./ui/PlanetTooltip";
@@ -27,6 +28,7 @@ export default function App() {
       <MiniMap />
       <PlanetTooltip />
       <DockPrompt />
+      <SatelliteDockPrompt />
       <DockedPanel />
       <WarpOverlay />
       <ProjectModal />
