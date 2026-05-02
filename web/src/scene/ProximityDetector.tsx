@@ -26,7 +26,14 @@ export function ProximityDetector({ rocketRef }: Props) {
     tickRef.current += dt;
     if (tickRef.current < 0.12) return;
     tickRef.current = 0;
-    if (mode === "docked" || mode === "exploring" || mode === "warping") return;
+    if (
+      mode === "docked" ||
+      mode === "exploring" ||
+      mode === "warping" ||
+      mode === "landing" ||
+      mode === "exploded"
+    )
+      return;
     if (!rocketRef.current) return;
 
     const rocketPos = rocketRef.current.position;

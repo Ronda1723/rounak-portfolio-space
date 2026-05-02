@@ -162,7 +162,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   setTarget: (p) => set({ targetPlanet: p }),
   setNear: (p) => {
     const { mode } = get();
-    if (mode === "docked" || mode === "exploring" || mode === "warping" || mode === "exploded") return;
+    if (
+      mode === "docked" ||
+      mode === "exploring" ||
+      mode === "warping" ||
+      mode === "landing" ||
+      mode === "exploded"
+    )
+      return;
     set({ nearPlanet: p, mode: p ? "approaching" : "cruising" });
   },
   setDocked: (p) => set({ dockedPlanet: p, mode: p ? "docked" : "cruising" }),
