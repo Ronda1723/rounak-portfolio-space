@@ -23,14 +23,19 @@ export function RoomHUD() {
   if (mode !== "exploring" || !docked) return null;
 
   return (
-    <div className="room-hud">
-      <div className="room-hud-meta">
-        <div className="room-hud-eyebrow">MUSEUM · {docked.name.toUpperCase()}</div>
-        <div className="room-hud-tagline">{docked.tagline}</div>
+    <>
+      <div className="room-hud">
+        <div className="room-hud-meta">
+          <div className="room-hud-eyebrow">MUSEUM · {docked.name.toUpperCase()}</div>
+          <div className="room-hud-tagline">{docked.tagline}</div>
+        </div>
+        <button className="room-hud-leave" onClick={leaveRoom}>
+          ↩ RETURN TO COCKPIT <kbd>ESC</kbd>
+        </button>
       </div>
-      <button className="room-hud-leave" onClick={leaveRoom}>
-        ↩ RETURN TO COCKPIT <kbd>ESC</kbd>
-      </button>
-    </div>
+      <div className="room-controls-hint">
+        <kbd>W</kbd>/<kbd>S</kbd> walk · <kbd>A</kbd>/<kbd>D</kbd> turn · click stone to inspect
+      </div>
+    </>
   );
 }

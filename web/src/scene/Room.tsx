@@ -72,6 +72,9 @@ const ROOM_H = 6.5;
 export const STONE_RADIUS = 7.0;
 // Astronaut walks to this radius (closer to center than the stone).
 export const ASTRONAUT_VIEW_RADIUS = 5.2;
+// Walking bounds inside the room (margin from the walls)
+export const WALK_HALF_W = ROOM_W / 2 - 1.4;
+export const WALK_HALF_D = ROOM_D / 2 - 1.4;
 
 export function stoneLayoutAngle(index: number, total: number) {
   return (index / total) * Math.PI * 2 + Math.PI / 4;

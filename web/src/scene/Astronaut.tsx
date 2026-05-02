@@ -1,9 +1,15 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
 import type { Planet } from "../config/planets";
 import { useGameStore } from "../state/useGameStore";
-import { ASTRONAUT_VIEW_RADIUS, ROOM_ORIGIN, stoneLayoutAngle } from "./Room";
+import {
+  ASTRONAUT_VIEW_RADIUS,
+  ROOM_ORIGIN,
+  WALK_HALF_D,
+  WALK_HALF_W,
+  stoneLayoutAngle,
+} from "./Room";
 import { astronautTracker } from "./astronautTracker";
 
 const SUIT_WHITE = "#eef0f3";
@@ -15,6 +21,14 @@ const ACCENT_RED = "#d94432";
 const HOME_POS = new Vector3(0, 0, 0);
 const tmpTarget = new Vector3();
 const tmpDir = new Vector3();
+
+// Movement tuning
+const WALK_SPEED = 2.6;     // units / sec when moving manually
+const TURN_SPEED = 2.2;     // rad / sec for A/D
+const AUTO_WALK_SPEED = 2.4; // units / sec for click-to-walk
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
 
 type Props = {
   planet: Planet;
@@ -28,20 +42,80 @@ export function Astronaut({ planet }: Props) {
   const legL = useRef<Group>(null);
   const legR = useRef<Group>(null);
 
-  // Walking state — driven from the store: when an artifact becomes active,
-  // we walk to a viewing slot in front of its stone. When it clears, we walk
-  // back home.
-  const walkPhase = useRef(0); // 0..2π for leg cycle
-  const walkSpeed = useRef(0); // 0 = idle, 1 = full stride
+  const walkPhase = useRef(0);
+  const walkSpeed = useRef(0);
 
+  // True once the player has used WASD; suppresses auto-walk until a new
+  // artifact is clicked (clicking a stone re-engages the cinematic walk).
+  const manualMode = useRef(false);
+
+  // Local key state. Only WASD is captured here; other game-wide keys are
+  // handled elsewhere (DockPrompt, RoomHUD, etc.).
+  const keys = useRef<Record<string, boolean>>({});
+
+  const mode = useGameStore((s) => s.mode);
   const activeArtifact = useGameStore((s) => s.activeArtifact);
+
+  // Reset manual override and re-enable auto-walk every time the user picks
+  // a new artifact.
+  useEffect(() => {
+    manualMode.current = false;
+  }, [activeArtifact?.id]);
+
+  // Keyboard listeners for WASD walking. Only respond while in the room.
+  useEffect(() => {
+    if (mode !== "exploring") return;
+    const onDown = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === "w" || k === "a" || k === "s" || k === "d") {
+        keys.current[k] = true;
+      }
+    };
+    const onUp = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === "w" || k === "a" || k === "s" || k === "d") {
+        keys.current[k] = false;
+      }
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      keys.current = {};
+    };
+  }, [mode]);
 
   useFrame((_, dt) => {
     if (!root.current) return;
     const t = performance.now() * 0.001;
 
-    // ── Compute target ────────────────────────────────────────
-    if (activeArtifact) {
+    // ── 1. Manual movement (WASD) ────────────────────────────
+    const k = keys.current;
+    const fwdInput = (k.w ? 1 : 0) - (k.s ? 1 : 0);
+    const turnInput = (k.a ? 1 : 0) - (k.d ? 1 : 0);
+    const hasManualInput = fwdInput !== 0 || turnInput !== 0;
+
+    let isWalking = false;
+
+    if (hasManualInput && mode === "exploring") {
+      manualMode.current = true;
+
+      // Turn first so movement uses the new heading
+      root.current.rotation.y += turnInput * TURN_SPEED * dt;
+
+      if (fwdInput !== 0) {
+        const yaw = root.current.rotation.y;
+        const step = fwdInput * WALK_SPEED * dt;
+        const nx = root.current.position.x + Math.sin(yaw) * step;
+        const nz = root.current.position.z + Math.cos(yaw) * step;
+        root.current.position.x = clamp(nx, -WALK_HALF_W, WALK_HALF_W);
+        root.current.position.z = clamp(nz, -WALK_HALF_D, WALK_HALF_D);
+        isWalking = true;
+      }
+    }
+    // ── 2. Auto-walk to active artifact (cinematic) ──────────
+    else if (!manualMode.current && activeArtifact) {
       const i = planet.artifacts.findIndex((a) => a.id === activeArtifact.id);
       if (i >= 0) {
         const angle = stoneLayoutAngle(i, planet.artifacts.length);
@@ -53,63 +127,55 @@ export function Astronaut({ planet }: Props) {
       } else {
         tmpTarget.copy(HOME_POS);
       }
-    } else {
-      tmpTarget.copy(HOME_POS);
+
+      tmpDir.subVectors(tmpTarget, root.current.position);
+      tmpDir.y = 0;
+      const dist = tmpDir.length();
+      if (dist > 0.06) {
+        const stepLen = Math.min(dist, AUTO_WALK_SPEED * dt);
+        tmpDir.normalize().multiplyScalar(stepLen);
+        root.current.position.add(tmpDir);
+
+        const targetYaw = Math.atan2(tmpDir.x, tmpDir.z);
+        let dy = targetYaw - root.current.rotation.y;
+        dy = ((dy + Math.PI) % (Math.PI * 2)) - Math.PI;
+        root.current.rotation.y += dy * Math.min(1, dt * 8);
+        isWalking = true;
+      }
     }
 
-    // ── Walk toward target ────────────────────────────────────
-    tmpDir.subVectors(tmpTarget, root.current.position);
-    tmpDir.y = 0;
-    const dist = tmpDir.length();
-
-    const isWalking = dist > 0.06;
+    // ── Stride / idle pose blending ──────────────────────────
     if (isWalking) {
-      // Move at ~2.4 units/sec, easing as we approach
-      const stepLen = Math.min(dist, 2.4 * dt);
-      tmpDir.normalize().multiplyScalar(stepLen);
-      root.current.position.add(tmpDir);
-
-      // Face direction of travel — smooth yaw
-      const targetYaw = Math.atan2(tmpDir.x, tmpDir.z);
-      let dy = targetYaw - root.current.rotation.y;
-      dy = ((dy + Math.PI) % (Math.PI * 2)) - Math.PI;
-      root.current.rotation.y += dy * Math.min(1, dt * 8);
-
       walkSpeed.current = Math.min(1, walkSpeed.current + dt * 6);
-      walkPhase.current += dt * 7.5; // stride frequency
+      walkPhase.current += dt * 7.5;
     } else {
       walkSpeed.current = Math.max(0, walkSpeed.current - dt * 5);
     }
 
-    // ── Body bob (breathing + walking pulse) ─────────────────
+    // Body bob
     const breathe = Math.sin(t * 1.2) * 0.025;
-    const walkBob = Math.abs(Math.sin(walkPhase.current * 2)) * 0.05 * walkSpeed.current;
+    const walkBob =
+      Math.abs(Math.sin(walkPhase.current * 2)) * 0.05 * walkSpeed.current;
     root.current.position.y = breathe + walkBob;
 
-    // ── Limb swing ───────────────────────────────────────────
+    // Limbs
     const swing = Math.sin(walkPhase.current);
     const armSwing = swing * 0.5 * walkSpeed.current;
     const legSwing = swing * 0.6 * walkSpeed.current;
+    if (armL.current)
+      armL.current.rotation.x =
+        -armSwing + Math.sin(t * 0.8) * 0.06 * (1 - walkSpeed.current);
+    if (armR.current)
+      armR.current.rotation.x =
+        armSwing - Math.sin(t * 0.8) * 0.06 * (1 - walkSpeed.current);
+    if (legL.current) legL.current.rotation.x = legSwing;
+    if (legR.current) legR.current.rotation.x = -legSwing;
 
-    if (armL.current) {
-      armL.current.rotation.x = -armSwing + Math.sin(t * 0.8) * 0.06 * (1 - walkSpeed.current);
-    }
-    if (armR.current) {
-      armR.current.rotation.x = armSwing - Math.sin(t * 0.8) * 0.06 * (1 - walkSpeed.current);
-    }
-    if (legL.current) {
-      legL.current.rotation.x = legSwing;
-    }
-    if (legR.current) {
-      legR.current.rotation.x = -legSwing;
-    }
+    if (head.current)
+      head.current.rotation.y =
+        Math.sin(t * 0.4) * 0.15 * (1 - walkSpeed.current);
 
-    // Subtle head sway when idle
-    if (head.current) {
-      head.current.rotation.y = Math.sin(t * 0.4) * 0.15 * (1 - walkSpeed.current);
-    }
-
-    // Publish world-space pose for the camera to follow
+    // Publish world-space pose for the camera
     astronautTracker.position.set(
       ROOM_ORIGIN[0] + root.current.position.x,
       ROOM_ORIGIN[1] + root.current.position.y,
@@ -120,7 +186,7 @@ export function Astronaut({ planet }: Props) {
 
   return (
     <group ref={root}>
-      {/* ── Legs (parented to groups so they swing from the hips) ── */}
+      {/* Legs */}
       {([
         [legL, -1],
         [legR, 1],
@@ -130,7 +196,6 @@ export function Astronaut({ planet }: Props) {
             <capsuleGeometry args={[0.13, 0.55, 6, 12]} />
             <meshStandardMaterial color={SUIT_WHITE} metalness={0.15} roughness={0.55} />
           </mesh>
-          {/* Boot */}
           <mesh position={[0, -0.78, 0.04]} castShadow>
             <boxGeometry args={[0.22, 0.16, 0.34]} />
             <meshStandardMaterial color={SUIT_TRIM} metalness={0.4} roughness={0.6} />
@@ -138,19 +203,16 @@ export function Astronaut({ planet }: Props) {
         </group>
       ))}
 
-      {/* ── Hip belt ─────────────────────────────────────────── */}
       <mesh position={[0, 0.92, 0]} castShadow>
         <cylinderGeometry args={[0.32, 0.32, 0.1, 16]} />
         <meshStandardMaterial color={SUIT_TRIM} metalness={0.5} roughness={0.5} />
       </mesh>
 
-      {/* ── Torso ────────────────────────────────────────────── */}
       <mesh position={[0, 1.32, 0]} castShadow>
         <capsuleGeometry args={[0.36, 0.55, 6, 16]} />
         <meshStandardMaterial color={SUIT_WHITE} metalness={0.18} roughness={0.5} />
       </mesh>
 
-      {/* Chest control panel */}
       <mesh position={[0, 1.4, 0.34]} castShadow>
         <boxGeometry args={[0.4, 0.28, 0.06]} />
         <meshStandardMaterial color="#1a1d24" metalness={0.7} roughness={0.4} />
@@ -162,13 +224,12 @@ export function Astronaut({ planet }: Props) {
         </mesh>
       ))}
 
-      {/* Backpack */}
       <mesh position={[0, 1.32, -0.36]} castShadow>
         <boxGeometry args={[0.55, 0.65, 0.28]} />
         <meshStandardMaterial color={SUIT_TRIM} metalness={0.55} roughness={0.45} />
       </mesh>
 
-      {/* ── Arms ─────────────────────────────────────────────── */}
+      {/* Arms */}
       {([
         [armL, -1],
         [armR, 1],
@@ -194,16 +255,13 @@ export function Astronaut({ planet }: Props) {
         </group>
       ))}
 
-      {/* ── Helmet ───────────────────────────────────────────── */}
+      {/* Helmet */}
       <group ref={head} position={[0, 1.92, 0]}>
         <mesh castShadow>
           <sphereGeometry args={[0.32, 24, 20]} />
           <meshStandardMaterial color={SUIT_WHITE} metalness={0.25} roughness={0.4} />
         </mesh>
-        <mesh
-          position={[0, 0.02, 0.18]}
-          rotation={[0.1, 0, 0]}
-        >
+        <mesh position={[0, 0.02, 0.18]} rotation={[0.1, 0, 0]}>
           <sphereGeometry
             args={[0.22, 20, 16, Math.PI * 0.25, Math.PI * 0.5, Math.PI * 0.3, Math.PI * 0.5]}
           />
@@ -240,7 +298,6 @@ export function Astronaut({ planet }: Props) {
         </mesh>
       </group>
 
-      {/* Name patch */}
       <mesh position={[0.18, 1.5, 0.36]}>
         <planeGeometry args={[0.12, 0.06]} />
         <meshStandardMaterial color={ACCENT_RED} />
