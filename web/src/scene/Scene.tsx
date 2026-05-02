@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { ACESFilmicToneMapping, Group } from "three";
-import { Environment } from "@react-three/drei";
+import { Environment, Preload } from "@react-three/drei";
 import { Rocket } from "./Rocket";
 import { Planet } from "./Planet";
 import { Sun } from "./Sun";
@@ -33,6 +33,11 @@ export function Scene() {
   // Only hide space when we're actually inside the room (exploring).
   // During the landing dive we want to SEE the planet growing in front of us.
   const inRoom = mode === "exploring";
+  // Pre-mount the Room from app start with a default planet so shaders +
+  // fonts compile during boot, not at the moment the user presses D. We
+  // swap to the docked planet whenever it changes.
+  const roomPlanet = docked ?? PLANETS[0];
+  const roomVisible = mode === "exploring" || mode === "landing";
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -90,11 +95,12 @@ export function Scene() {
       <CameraFollow rocketRef={rocketRef} />
       <LandingSequence rocketRef={rocketRef} />
 
-      {(mode === "exploring" || mode === "landing") && docked && (
-        <Room planet={docked} />
-      )}
+      <group visible={roomVisible}>
+        <Room planet={roomPlanet} />
+      </group>
       <RoomCamera />
 
+      <Preload all />
       <PostFX />
     </Canvas>
   );
