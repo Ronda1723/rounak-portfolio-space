@@ -30,7 +30,9 @@ export function Scene() {
   const thrustRef = useRef<number>(0);
   const mode = useGameStore((s) => s.mode);
   const docked = useGameStore((s) => s.dockedPlanet);
-  const inRoom = mode === "exploring" || mode === "landing";
+  // Only hide space when we're actually inside the room (exploring).
+  // During the landing dive we want to SEE the planet growing in front of us.
+  const inRoom = mode === "exploring";
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
