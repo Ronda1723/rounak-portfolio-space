@@ -61,7 +61,7 @@ export function Scene() {
         <Planet key={p.id} planet={p} />
       ))}
 
-      <Rocket ref={rocketRef} initialPosition={[0, 0, 32]} />
+      <Rocket ref={rocketRef} initialPosition={[0, 0, 32]} thrustRef={thrustRef} />
       <RespawnHandler rocketRef={rocketRef} initialPosition={[0, 0, 32]} />
       <EnginePlume rocketRef={rocketRef} thrustRef={thrustRef} />
 
