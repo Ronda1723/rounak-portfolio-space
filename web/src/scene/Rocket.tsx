@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Group, Mesh, MeshStandardMaterial } from "three";
 
-const ROCKET_URL = "/assets/rocket/falcon9.glb";
+const ROCKET_URL = "/assets/rocket/dragon.glb";
 
 type Props = {
   initialPosition?: [number, number, number];
@@ -56,8 +56,8 @@ export const Rocket = forwardRef<Group, Props>(({ initialPosition }, ref) => {
     <group ref={ref} position={initialPosition ?? [0, 0, 0]}>
       <primitive
         object={cloned}
-        scale={0.22}
-        rotation={[-Math.PI / 2, 0, 0]}
+        scale={0.45}
+        rotation={[0, 0, 0]}
       />
     </group>
   );

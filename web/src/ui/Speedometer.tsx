@@ -26,7 +26,6 @@ export function Speedometer() {
   const nosNorm = Math.max(0, Math.min(1, nosFuel));
 
   const speedArc = arc(speedNorm);
-  const nosArc = arc(nosNorm);
 
   const cx = SIZE / 2;
   const cy = SIZE / 2;
