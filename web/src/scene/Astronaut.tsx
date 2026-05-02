@@ -3,7 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
 import type { Planet } from "../config/planets";
 import { useGameStore } from "../state/useGameStore";
-import { ASTRONAUT_VIEW_RADIUS, stoneLayoutAngle } from "./Room";
+import { ASTRONAUT_VIEW_RADIUS, ROOM_ORIGIN, stoneLayoutAngle } from "./Room";
+import { astronautTracker } from "./astronautTracker";
 
 const SUIT_WHITE = "#eef0f3";
 const SUIT_TRIM = "#3a4148";
@@ -107,6 +108,14 @@ export function Astronaut({ planet }: Props) {
     if (head.current) {
       head.current.rotation.y = Math.sin(t * 0.4) * 0.15 * (1 - walkSpeed.current);
     }
+
+    // Publish world-space pose for the camera to follow
+    astronautTracker.position.set(
+      ROOM_ORIGIN[0] + root.current.position.x,
+      ROOM_ORIGIN[1] + root.current.position.y,
+      ROOM_ORIGIN[2] + root.current.position.z
+    );
+    astronautTracker.yaw = root.current.rotation.y;
   });
 
   return (
