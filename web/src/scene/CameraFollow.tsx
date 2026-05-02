@@ -1,7 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { Group, Vector3 } from "three";
 import { rocketTracker } from "./rocketTracker";
+import { useGameStore } from "../state/useGameStore";
 
 type Props = {
   rocketRef: RefObject<Group | null>;
@@ -14,8 +15,20 @@ export function CameraFollow({ rocketRef }: Props) {
   const desired = useRef(new Vector3());
   const lookAt = useRef(new Vector3());
   const offset = useRef(new Vector3());
+  const mode = useGameStore((s) => s.mode);
+
+  // Snap camera back to rocket the moment we exit the room.
+  useEffect(() => {
+    if (mode !== "cruising") return;
+    const rocket = rocketRef.current;
+    if (!rocket) return;
+    offset.current.copy(FOLLOW_OFFSET).applyEuler(rocket.rotation);
+    camera.position.copy(rocket.position).add(offset.current);
+    camera.lookAt(rocket.position);
+  }, [mode, camera, rocketRef]);
 
   useFrame((_, dt) => {
+    if (mode === "landing" || mode === "exploring") return;
     const rocket = rocketRef.current;
     if (!rocket) return;
 

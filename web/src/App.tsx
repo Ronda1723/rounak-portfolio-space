@@ -2,10 +2,11 @@ import { Scene } from "./scene/Scene";
 import { HUD } from "./ui/HUD";
 import { DockPrompt } from "./ui/DockPrompt";
 import { DockedPanel } from "./ui/DockedPanel";
-import { ProjectModal } from "./ui/ProjectModal";
 import { SatelliteModal } from "./ui/SatelliteModal";
 import { SatelliteTooltip } from "./ui/SatelliteTooltip";
 import { SatelliteDockPrompt } from "./ui/SatelliteDockPrompt";
+import { ArtifactPanel } from "./ui/ArtifactPanel";
+import { RoomHUD } from "./ui/RoomHUD";
 import { WarpOverlay } from "./ui/WarpOverlay";
 import { HazardWarning } from "./ui/HazardWarning";
 import { PlanetTooltip } from "./ui/PlanetTooltip";
@@ -31,9 +32,10 @@ export default function App() {
       <SatelliteDockPrompt />
       <DockedPanel />
       <WarpOverlay />
-      <ProjectModal />
       <SatelliteModal />
       <SatelliteTooltip />
+      <RoomHUD />
+      <ArtifactPanel />
       <Explosion />
       <BootScreen />
     </div>

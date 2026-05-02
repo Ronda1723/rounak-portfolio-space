@@ -42,6 +42,7 @@ export function Pilot({ rocketRef, keys, thrustRef }: Props) {
     mode === "docked" ||
     mode === "exploring" ||
     mode === "warping" ||
+    mode === "landing" ||
     mode === "exploded";
 
   useEffect(() => {

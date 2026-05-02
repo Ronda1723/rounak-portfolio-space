@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Planet } from "../config/planets";
+import type { Artifact, Planet } from "../config/planets";
 import type { Satellite } from "../config/satellites";
 
 export type Mode =
@@ -7,6 +7,7 @@ export type Mode =
   | "approaching"
   | "docked"
   | "warping"
+  | "landing"
   | "exploring"
   | "exploded";
 export type HazardLevel = "none" | "caution" | "critical";
@@ -29,6 +30,12 @@ type GameState = {
   sunDangerTime: number;
   /** seconds remaining before vessel destruction (5s countdown) */
   sunDeathDeadline: number;
+  /** 0..1 progress of landing animation */
+  landingProgress: number;
+  setLandingProgress: (p: number) => void;
+  beginLanding: () => void;
+  arriveInRoom: () => void;
+  leaveRoom: () => void;
   /** NOS boost fuel 0..1 */
   nosFuel: number;
   /** is NOS currently being applied */
@@ -41,6 +48,10 @@ type GameState = {
   hoveredSatellite: Satellite | null;
   /** satellite the rocket is currently within docking range of */
   nearSatellite: Satellite | null;
+  /** artifact stone currently being inspected in the museum room */
+  activeArtifact: Artifact | null;
+  openArtifact: (a: Artifact) => void;
+  closeArtifact: () => void;
   openSatellite: (s: Satellite) => void;
   closeSatellite: () => void;
   setHoveredSatellite: (s: Satellite | null) => void;
@@ -88,9 +99,31 @@ export const useGameStore = create<GameState>((set, get) => ({
   nosFuel: 1,
   nosActive: false,
   respawnCount: 0,
+  landingProgress: 0,
   activeSatellite: null,
   hoveredSatellite: null,
   nearSatellite: null,
+  activeArtifact: null,
+
+  setLandingProgress: (p) => set({ landingProgress: Math.max(0, Math.min(1, p)) }),
+  beginLanding: () => {
+    const { nearPlanet } = get();
+    if (!nearPlanet) return;
+    set({
+      mode: "landing",
+      dockedPlanet: nearPlanet,
+      nearPlanet: null,
+      landingProgress: 0,
+    });
+  },
+  arriveInRoom: () => set({ mode: "exploring", landingProgress: 1 }),
+  leaveRoom: () =>
+    set({
+      mode: "cruising",
+      dockedPlanet: null,
+      nearPlanet: null,
+      landingProgress: 0,
+    }),
 
   setHazard: (level, distance) => set({ hazard: level, hazardDistance: distance }),
   setSunDangerTime: (t) => set({ sunDangerTime: t }),
@@ -165,4 +198,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   closeSatellite: () => set({ activeSatellite: null }),
   setHoveredSatellite: (s) => set({ hoveredSatellite: s }),
   setNearSatellite: (s) => set({ nearSatellite: s }),
+  openArtifact: (a) => set({ activeArtifact: a }),
+  closeArtifact: () => set({ activeArtifact: null }),
 }));

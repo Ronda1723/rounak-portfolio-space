@@ -1248,6 +1248,138 @@ kbd {
   animation: pulse 1.2s ease-in-out infinite;
 }
 
+/* ---------- room HUD (museum overlay) ---------- */
+.room-hud {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 14px 22px;
+  background: rgba(8, 12, 20, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(91, 192, 235, 0.18);
+  border-radius: 12px;
+  z-index: 40;
+  font-family: var(--font-body);
+}
+.room-hud-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.room-hud-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--telemetry);
+  font-family: var(--font-mono, monospace);
+}
+.room-hud-tagline {
+  font-size: 14px;
+  color: var(--hull-white);
+}
+.room-hud-leave {
+  background: transparent;
+  border: 1px solid rgba(91, 192, 235, 0.4);
+  color: var(--telemetry);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: var(--font-mono, monospace);
+  transition: all 0.15s ease;
+}
+.room-hud-leave:hover {
+  border-color: var(--telemetry);
+  color: var(--hull-white);
+  background: rgba(91, 192, 235, 0.1);
+}
+.room-hud-leave kbd {
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: rgba(91, 192, 235, 0.15);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* ---------- artifact panel (slide-in detail when stone clicked) ---------- */
+.artifact-panel {
+  position: fixed;
+  top: 50%;
+  right: 28px;
+  transform: translateY(-50%);
+  width: 380px;
+  max-width: calc(100vw - 56px);
+  padding: 32px 28px;
+  background: rgba(8, 12, 20, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left: 3px solid;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  font-family: var(--font-body);
+  animation: artifact-slide-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes artifact-slide-in {
+  from { opacity: 0; transform: translate(40px, -50%); }
+  to   { opacity: 1; transform: translate(0,    -50%); }
+}
+.artifact-panel-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: 1px solid rgba(200, 214, 229, 0.18);
+  color: rgba(200, 214, 229, 0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  font-family: var(--font-mono, monospace);
+}
+.artifact-panel-close:hover {
+  color: var(--hull-white);
+  border-color: rgba(200, 214, 229, 0.5);
+}
+.artifact-panel-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  margin-bottom: 12px;
+  font-family: var(--font-mono, monospace);
+}
+.artifact-panel-title {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--hull-white);
+  margin: 0 0 16px;
+  line-height: 1.15;
+}
+.artifact-panel-divider {
+  height: 2px;
+  width: 56px;
+  margin-bottom: 22px;
+  border-radius: 1px;
+}
+.artifact-panel-blurb {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--hull-white);
+  margin: 0 0 18px;
+}
+.artifact-panel-detail {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #c8d6e5;
+  margin: 0;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 768px) {
   .docked-panel { width: 100%; }
@@ -1255,4 +1387,5 @@ kbd {
   .project-modal-title { font-size: 38px; }
   .project-modal-body { padding: 28px; }
   .project-modal-meta { grid-template-columns: 1fr; gap: 18px; }
+  .artifact-panel { width: calc(100vw - 32px); right: 16px; }
 }

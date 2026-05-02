@@ -14,6 +14,10 @@ import { DockController } from "./DockController";
 import { ProximityDetector } from "./ProximityDetector";
 import { EnginePlume } from "./EnginePlume";
 import { CameraFollow } from "./CameraFollow";
+import { LandingSequence } from "./LandingSequence";
+import { Room } from "./Room";
+import { RoomCamera } from "./RoomCamera";
+import { useGameStore } from "../state/useGameStore";
 import { SunHazard } from "./SunHazard";
 import { RespawnHandler } from "./RespawnHandler";
 import { PLANETS } from "../config/planets";
@@ -24,6 +28,9 @@ export function Scene() {
   const keys = useRef<Record<string, boolean>>({});
   const rocketRef = useRef<Group | null>(null);
   const thrustRef = useRef<number>(0);
+  const mode = useGameStore((s) => s.mode);
+  const docked = useGameStore((s) => s.dockedPlanet);
+  const inRoom = mode === "exploring" || mode === "landing";
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -51,25 +58,27 @@ export function Scene() {
       <Environment preset="night" environmentIntensity={0.7} background={false} />
       <ambientLight intensity={0.08} />
 
-      <StarField />
+      <group visible={!inRoom}>
+        <StarField />
 
-      <Sun />
+        <Sun />
 
-      {PLANETS.map((p) => (
-        <OrbitRing key={`ring-${p.id}`} radius={p.orbitRadius} />
-      ))}
+        {PLANETS.map((p) => (
+          <OrbitRing key={`ring-${p.id}`} radius={p.orbitRadius} />
+        ))}
 
-      {PLANETS.map((p) => (
-        <Planet key={p.id} planet={p} />
-      ))}
+        {PLANETS.map((p) => (
+          <Planet key={p.id} planet={p} />
+        ))}
 
-      {SATELLITES.map((s) => (
-        <Satellite key={s.id} satellite={s} />
-      ))}
+        {SATELLITES.map((s) => (
+          <Satellite key={s.id} satellite={s} />
+        ))}
 
-      <Rocket ref={rocketRef} initialPosition={[0, 0, 32]} thrustRef={thrustRef} />
+        <Rocket ref={rocketRef} initialPosition={[0, 0, 32]} thrustRef={thrustRef} />
+        <EnginePlume rocketRef={rocketRef} thrustRef={thrustRef} />
+      </group>
       <RespawnHandler rocketRef={rocketRef} initialPosition={[0, 0, 32]} />
-      <EnginePlume rocketRef={rocketRef} thrustRef={thrustRef} />
 
       <Pilot rocketRef={rocketRef} keys={keys} thrustRef={thrustRef} />
       <Autopilot rocketRef={rocketRef} />
@@ -77,6 +86,12 @@ export function Scene() {
       <ProximityDetector rocketRef={rocketRef} />
       <SunHazard rocketRef={rocketRef} />
       <CameraFollow rocketRef={rocketRef} />
+      <LandingSequence rocketRef={rocketRef} />
+
+      {(mode === "exploring" || mode === "landing") && docked && (
+        <Room planet={docked} />
+      )}
+      <RoomCamera />
 
       <PostFX />
     </Canvas>
