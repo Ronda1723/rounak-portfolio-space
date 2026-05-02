@@ -17,6 +17,8 @@ import { CameraFollow } from "./CameraFollow";
 import { SunHazard } from "./SunHazard";
 import { RespawnHandler } from "./RespawnHandler";
 import { PLANETS } from "../config/planets";
+import { SATELLITES } from "../config/satellites";
+import { Satellite } from "./Satellite";
 
 export function Scene() {
   const keys = useRef<Record<string, boolean>>({});
@@ -59,6 +61,10 @@ export function Scene() {
 
       {PLANETS.map((p) => (
         <Planet key={p.id} planet={p} />
+      ))}
+
+      {SATELLITES.map((s) => (
+        <Satellite key={s.id} satellite={s} />
       ))}
 
       <Rocket ref={rocketRef} initialPosition={[0, 0, 32]} thrustRef={thrustRef} />

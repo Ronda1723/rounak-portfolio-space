@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Planet } from "../config/planets";
+import type { Satellite } from "../config/satellites";
 
 export type Mode =
   | "cruising"
@@ -34,6 +35,13 @@ type GameState = {
   nosActive: boolean;
   /** increments on resetSession so scene listeners can respawn the rocket */
   respawnCount: number;
+  /** satellite currently being viewed in modal, if any */
+  activeSatellite: Satellite | null;
+  /** satellite currently being hovered (for tooltip) */
+  hoveredSatellite: Satellite | null;
+  openSatellite: (s: Satellite) => void;
+  closeSatellite: () => void;
+  setHoveredSatellite: (s: Satellite | null) => void;
   setHazard: (level: HazardLevel, distance: number) => void;
   setSunDangerTime: (t: number) => void;
   setSunDeathDeadline: (t: number) => void;
@@ -77,6 +85,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   nosFuel: 1,
   nosActive: false,
   respawnCount: 0,
+  activeSatellite: null,
+  hoveredSatellite: null,
 
   setHazard: (level, distance) => set({ hazard: level, hazardDistance: distance }),
   setSunDangerTime: (t) => set({ sunDangerTime: t }),
@@ -147,4 +157,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { dockedPlanet } = get();
     set({ mode: dockedPlanet ? "docked" : "cruising", warpProgress: 0 });
   },
+  openSatellite: (s) => set({ activeSatellite: s }),
+  closeSatellite: () => set({ activeSatellite: null }),
+  setHoveredSatellite: (s) => set({ hoveredSatellite: s }),
 }));

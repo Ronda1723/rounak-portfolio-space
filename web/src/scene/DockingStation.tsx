@@ -15,6 +15,7 @@ export function DockingStation({ planet }: Props) {
   const stationOrbitRef = useRef<Group>(null);
   const stationBodyRef = useRef<Group>(null);
   const beaconRef = useRef<Group>(null);
+  const dishRef = useRef<Group>(null);
 
   const near = useGameStore((s) => s.nearPlanet);
   const docked = useGameStore((s) => s.dockedPlanet);
@@ -30,6 +31,9 @@ export function DockingStation({ planet }: Props) {
       const v = (Math.sin(t) + 1) * 0.5;
       beaconRef.current.scale.setScalar(0.85 + v * 0.3);
     }
+    if (dishRef.current) {
+      dishRef.current.rotation.y += dt * 0.4;
+    }
     if (stationBodyRef.current) {
       stationBodyRef.current.getWorldPosition(tmpWorld);
       let stored = stationWorldPositions.get(planet.id);
@@ -41,147 +45,117 @@ export function DockingStation({ planet }: Props) {
     }
   });
 
-  // Compact station — sized so the rocket has a clear target without
-  // overwhelming the planet. Slight clearance from the planet surface.
   const stationRadius = Math.max(planet.size * 1.7, planet.size + 0.6);
-  const S = Math.max(0.4, planet.size * 0.32); // station size
-  const padR = S * 1.05;
-  const padThick = S * 0.1;
+  const R = Math.max(0.45, planet.size * 0.35);
 
-  const beaconColor = new Color(isDocked ? "#7AFFAD" : isNear ? "#5BC0EB" : "#5BC0EB");
-  const beaconOpacity = isDocked ? 1.0 : isNear ? 0.85 : 0.55;
-  const beaconStrength = isDocked ? 4.5 : isNear ? 2.5 : 1.2;
+  const beaconColor = new Color(isDocked ? "#7AFFAD" : "#5BC0EB");
+  const ringOpacity = isDocked ? 0.95 : isNear ? 0.7 : 0.4;
+
+  // Steel material params reused across structural parts
+  const steelColor = "#8e979e";
+  const darkSteel = "#3a4148";
 
   return (
     <group ref={stationOrbitRef}>
       <group ref={stationBodyRef} position={[stationRadius, 0, 0]}>
-        {/* TOP LANDING PAD — flat octagonal deck the rocket sits on */}
-        <mesh position={[0, S * 0.5, 0]}>
-          <cylinderGeometry args={[padR, padR, padThick, 8]} />
-          <meshStandardMaterial color="#cfd6dc" metalness={0.78} roughness={0.32} />
-        </mesh>
-
-        {/* Pad inner ring (target marker) */}
-        <mesh position={[0, S * 0.5 + padThick * 0.51, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[padR * 0.42, padR * 0.62, 32]} />
-          <meshBasicMaterial
-            color={beaconColor}
-            transparent
-            opacity={isDocked ? 0.95 : 0.55}
-            side={DoubleSide}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
+        {/* Glowing dock ring */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[R, R * 0.06, 8, 48]} />
+          <meshStandardMaterial
+            color={steelColor}
+            metalness={0.9}
+            roughness={0.28}
+            emissive={beaconColor}
+            emissiveIntensity={isDocked ? 1.4 : isNear ? 0.6 : 0.2}
           />
         </mesh>
 
-        {/* Pad outer trim */}
-        <mesh position={[0, S * 0.5 + padThick * 0.5, 0]}>
-          <torusGeometry args={[padR * 0.98, padThick * 0.18, 8, 32]} />
-          <meshStandardMaterial color="#7c8a94" metalness={0.7} roughness={0.42} />
-        </mesh>
-
-        {/* CENTRAL HABITAT — torus + cross */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[S * 0.62, S * 0.13, 12, 32]} />
-          <meshStandardMaterial color="#9aa3aa" metalness={0.85} roughness={0.32} />
-        </mesh>
-
-        {/* CONNECTING PYLONS — 4 columns supporting the pad */}
-        {[0, 1, 2, 3].map((i) => {
-          const a = i * (Math.PI / 2) + Math.PI / 4;
+        {/* Three steel struts spanning the ring (forming a Y across the dock) */}
+        {[0, 1, 2].map((i) => {
+          const a = (i / 3) * Math.PI * 2;
           return (
             <mesh
-              key={i}
-              position={[Math.cos(a) * padR * 0.7, S * 0.18, Math.sin(a) * padR * 0.7]}
+              key={`strut-${i}`}
+              position={[Math.cos(a) * R * 0.5, 0, Math.sin(a) * R * 0.5]}
+              rotation={[Math.PI / 2, 0, -a]}
             >
-              <cylinderGeometry
-                args={[S * 0.05, S * 0.05, S * 0.6, 6]}
+              <boxGeometry args={[R * 0.04, R * 1.0, R * 0.04]} />
+              <meshStandardMaterial
+                color={steelColor}
+                metalness={0.85}
+                roughness={0.35}
               />
-              <meshStandardMaterial color="#7c8a94" metalness={0.65} roughness={0.45} />
             </mesh>
           );
         })}
 
-        {/* SOLAR PANEL WINGS */}
-        <mesh position={[S * 1.55, S * 0.05, 0]}>
-          <boxGeometry args={[S * 1.4, S * 0.06, S * 0.7]} />
+        {/* Central steel hub at the strut intersection */}
+        <mesh>
+          <cylinderGeometry args={[R * 0.13, R * 0.13, R * 0.12, 12]} />
           <meshStandardMaterial
-            color="#0e1d3a"
-            metalness={0.75}
-            roughness={0.42}
-            emissive="#0a1f44"
-            emissiveIntensity={0.35}
-          />
-        </mesh>
-        <mesh position={[-S * 1.55, S * 0.05, 0]}>
-          <boxGeometry args={[S * 1.4, S * 0.06, S * 0.7]} />
-          <meshStandardMaterial
-            color="#0e1d3a"
-            metalness={0.75}
-            roughness={0.42}
-            emissive="#0a1f44"
-            emissiveIntensity={0.35}
+            color={darkSteel}
+            metalness={0.9}
+            roughness={0.3}
           />
         </mesh>
 
-        {/* DOWNWARD KEEL — module hanging below */}
-        <mesh position={[0, -S * 0.45, 0]}>
-          <boxGeometry args={[S * 0.5, S * 0.5, S * 0.5]} />
-          <meshStandardMaterial color="#a4adb5" metalness={0.55} roughness={0.45} />
+        {/* Antenna mast rising from hub */}
+        <mesh position={[0, R * 0.3, 0]}>
+          <cylinderGeometry args={[R * 0.018, R * 0.025, R * 0.5, 8]} />
+          <meshStandardMaterial
+            color={steelColor}
+            metalness={0.7}
+            roughness={0.4}
+          />
         </mesh>
 
-        {/* ANTENNA */}
-        <mesh position={[0, S * 1.05, 0]}>
-          <cylinderGeometry args={[S * 0.025, S * 0.04, S * 0.6, 6]} />
-          <meshStandardMaterial color="#7c8a94" metalness={0.6} roughness={0.5} />
-        </mesh>
-        <mesh position={[0, S * 1.4, 0]}>
-          <sphereGeometry args={[S * 0.07, 10, 8]} />
-          <meshBasicMaterial color="#FF3B30" toneMapped={false} />
-        </mesh>
+        {/* Spinning dish on top of mast */}
+        <group ref={dishRef} position={[0, R * 0.58, 0]}>
+          <mesh rotation={[Math.PI / 2.4, 0, 0]}>
+            <cylinderGeometry args={[R * 0.18, R * 0.05, R * 0.04, 16, 1, true]} />
+            <meshStandardMaterial
+              color="#cfd6dc"
+              metalness={0.9}
+              roughness={0.18}
+              side={DoubleSide}
+            />
+          </mesh>
+          <mesh position={[0, 0, R * 0.04]}>
+            <sphereGeometry args={[R * 0.025, 8, 6]} />
+            <meshBasicMaterial color="#FF3B30" toneMapped={false} />
+          </mesh>
+        </group>
 
-        {/* BEACON LIGHTS — meshes always; real point lights only on the active station to keep GPU happy */}
+        {/* Center beacon — pulses */}
         <group ref={beaconRef}>
-          {[0, 1, 2, 3].map((i) => {
-            const a = i * (Math.PI / 2);
-            return (
-              <group key={i} position={[Math.cos(a) * padR * 0.95, S * 0.55, Math.sin(a) * padR * 0.95]}>
-                <mesh>
-                  <sphereGeometry args={[S * 0.09, 10, 8]} />
-                  <meshBasicMaterial
-                    color={beaconColor}
-                    transparent
-                    opacity={beaconOpacity}
-                    blending={AdditiveBlending}
-                    toneMapped={false}
-                  />
-                </mesh>
-              </group>
-            );
-          })}
+          <mesh>
+            <sphereGeometry args={[R * 0.13, 16, 12]} />
+            <meshBasicMaterial
+              color={beaconColor}
+              transparent
+              opacity={isDocked ? 1.0 : isNear ? 0.9 : 0.6}
+              blending={AdditiveBlending}
+              toneMapped={false}
+            />
+          </mesh>
           {(isNear || isDocked) && (
             <pointLight
               color={beaconColor}
-              intensity={beaconStrength * 4}
-              distance={S * 12}
+              intensity={isDocked ? 18 : 8}
+              distance={R * 14}
               decay={2}
-              position={[0, S * 0.6, 0]}
             />
           )}
         </group>
 
-        {/* SELECTION HALO — pulses on the pad when docked / near */}
+        {/* Selection halo */}
         {(isNear || isDocked) && (
-          <mesh
-            position={[0, S * 0.5 + padThick * 0.55, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-          >
-            <ringGeometry args={[padR * 1.06, padR * 1.22, 64]} />
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[R * 1.08, R * 1.28, 64]} />
             <meshBasicMaterial
               color={beaconColor}
               transparent
-              opacity={isDocked ? 0.9 : 0.55}
+              opacity={ringOpacity}
               side={DoubleSide}
               blending={AdditiveBlending}
               depthWrite={false}
