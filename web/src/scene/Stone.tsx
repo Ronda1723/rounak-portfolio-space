@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { Mesh } from "three";
 import type { Artifact } from "../config/planets";
@@ -9,8 +10,8 @@ type Props = {
   position: [number, number, number];
 };
 
-const PEDESTAL_HEIGHT = 0.85;
-const STONE_HOVER_HEIGHT = PEDESTAL_HEIGHT + 0.55;
+const PEDESTAL_TOP = 1.0; // top of pedestal in world Y
+const STONE_HOVER_HEIGHT = PEDESTAL_TOP + 0.5;
 
 export function Stone({ artifact, position }: Props) {
   const stoneRef = useRef<Mesh>(null);
@@ -23,7 +24,6 @@ export function Stone({ artifact, position }: Props) {
 
   useFrame((_, dt) => {
     if (stoneRef.current) {
-      // Slow rotation + subtle bob
       stoneRef.current.rotation.y += dt * 0.6;
       const t = performance.now() * 0.001;
       stoneRef.current.position.y =
@@ -36,15 +36,6 @@ export function Stone({ artifact, position }: Props) {
     }
   });
 
-  const onPointerOver = () => {
-    setHovered(true);
-    document.body.style.cursor = "pointer";
-  };
-  const onPointerOut = () => {
-    setHovered(false);
-    document.body.style.cursor = "";
-  };
-
   return (
     <group
       position={position}
@@ -52,25 +43,52 @@ export function Stone({ artifact, position }: Props) {
         e.stopPropagation();
         openArtifact(artifact);
       }}
-      onPointerOver={onPointerOver}
-      onPointerOut={onPointerOut}
+      onPointerOver={() => {
+        setHovered(true);
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        setHovered(false);
+        document.body.style.cursor = "";
+      }}
     >
-      {/* Pedestal — stepped cylinder */}
-      <mesh position={[0, 0.15, 0]} castShadow>
-        <cylinderGeometry args={[0.55, 0.62, 0.3, 24]} />
-        <meshStandardMaterial color="#1a1d24" metalness={0.7} roughness={0.4} />
+      {/* ── Pedestal (3-tier brushed-metal) ────────────────────── */}
+      {/* Base */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.3, 0.2, 1.3]} />
+        <meshStandardMaterial color="#1a1d22" metalness={0.6} roughness={0.45} />
       </mesh>
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <cylinderGeometry args={[0.45, 0.5, 0.2, 24]} />
+      {/* Mid block */}
+      <mesh position={[0, 0.55, 0]} castShadow>
+        <boxGeometry args={[1.0, 0.7, 1.0]} />
         <meshStandardMaterial color="#2a2d34" metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <cylinderGeometry args={[0.4, 0.42, 0.15, 24]} />
-        <meshStandardMaterial color="#3a3d44" metalness={0.75} roughness={0.35} />
+      {/* Top cap */}
+      <mesh position={[0, 0.95, 0]} castShadow>
+        <boxGeometry args={[1.1, 0.1, 1.1]} />
+        <meshStandardMaterial color="#3a3d44" metalness={0.8} roughness={0.3} />
       </mesh>
 
-      {/* Glow disc on top of pedestal */}
-      <mesh position={[0, 0.69, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Pedestal name plate (front-facing toward room center) */}
+      <group position={[0, 0.55, 0.51]}>
+        <mesh>
+          <planeGeometry args={[0.85, 0.18]} />
+          <meshStandardMaterial color="#0e1320" metalness={0.6} roughness={0.4} />
+        </mesh>
+        <Text
+          position={[0, 0, 0.005]}
+          fontSize={0.078}
+          color="#e6c98a"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.18}
+        >
+          {artifact.name.toUpperCase()}
+        </Text>
+      </group>
+
+      {/* Glow halo on top of pedestal */}
+      <mesh position={[0, PEDESTAL_TOP + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.05, 0.34, 32]} />
         <meshBasicMaterial
           color={artifact.color}
@@ -80,7 +98,49 @@ export function Stone({ artifact, position }: Props) {
         />
       </mesh>
 
-      {/* The stone itself — faceted icosahedron, glowing */}
+      {/* ── Glass vitrine (cylindrical bell jar) ──────────────── */}
+      <mesh position={[0, PEDESTAL_TOP + 0.6, 0]}>
+        <cylinderGeometry args={[0.42, 0.42, 1.2, 32, 1, true]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.12}
+          metalness={0}
+          roughness={0.05}
+          transmission={0.92}
+          thickness={0.08}
+          ior={1.45}
+          side={2}
+          envMapIntensity={1.5}
+        />
+      </mesh>
+      {/* Vitrine top dome */}
+      <mesh position={[0, PEDESTAL_TOP + 1.2, 0]}>
+        <sphereGeometry args={[0.42, 32, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.12}
+          metalness={0}
+          roughness={0.05}
+          transmission={0.92}
+          thickness={0.08}
+          ior={1.45}
+          side={2}
+        />
+      </mesh>
+      {/* Vitrine base ring */}
+      <mesh position={[0, PEDESTAL_TOP + 0.02, 0]}>
+        <torusGeometry args={[0.42, 0.025, 12, 32]} />
+        <meshStandardMaterial color="#3a3d44" metalness={0.85} roughness={0.25} />
+      </mesh>
+      {/* Vitrine top ring */}
+      <mesh position={[0, PEDESTAL_TOP + 1.2, 0]}>
+        <torusGeometry args={[0.42, 0.022, 12, 32]} />
+        <meshStandardMaterial color="#3a3d44" metalness={0.85} roughness={0.25} />
+      </mesh>
+
+      {/* ── The stone itself — glowing icosahedron ────────────── */}
       <mesh ref={stoneRef} position={[0, STONE_HOVER_HEIGHT, 0]} castShadow>
         <icosahedronGeometry args={[0.32, 0]} />
         <meshStandardMaterial
@@ -93,7 +153,7 @@ export function Stone({ artifact, position }: Props) {
         />
       </mesh>
 
-      {/* Outer glow halo (additive sphere around the stone) */}
+      {/* Outer glow */}
       <mesh ref={glowRef} position={[0, STONE_HOVER_HEIGHT, 0]}>
         <sphereGeometry args={[0.5, 16, 12]} />
         <meshBasicMaterial
@@ -105,7 +165,7 @@ export function Stone({ artifact, position }: Props) {
         />
       </mesh>
 
-      {/* Point light contribution from the stone */}
+      {/* Stone-tinted point light */}
       <pointLight
         color={artifact.color}
         intensity={hovered || isActive ? 4 : 2}
@@ -113,18 +173,6 @@ export function Stone({ artifact, position }: Props) {
         decay={2}
         position={[0, STONE_HOVER_HEIGHT, 0]}
       />
-
-      {/* Plaque — small black slab in front of pedestal with the artifact name */}
-      <mesh position={[0, 0.45, 0.55]} rotation={[-Math.PI / 6, 0, 0]} castShadow>
-        <boxGeometry args={[0.7, 0.12, 0.04]} />
-        <meshStandardMaterial
-          color="#0e1320"
-          metalness={0.6}
-          roughness={0.4}
-          emissive={artifact.color}
-          emissiveIntensity={hovered ? 0.4 : 0.15}
-        />
-      </mesh>
     </group>
   );
 }
