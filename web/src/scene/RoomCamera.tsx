@@ -24,7 +24,7 @@ export function RoomCamera() {
   const pitch = useRef(0);
   const dragging = useRef(false);
   const last = useRef({ x: 0, y: 0 });
-  const radius = 5.5;
+  const radius = 9.5;
 
   // On entering exploring mode, snap camera into the room
   useEffect(() => {
