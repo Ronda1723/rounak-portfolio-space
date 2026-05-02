@@ -1,0 +1,34 @@
+:root {
+  /* Mission control palette */
+  --void:        #05070A;
+  --hull:        #0E1116;
+  --soot:        #1A1D22;
+  --hull-white:  #E8EAED;
+  --telemetry:   #5BC0EB;
+  --lock-cyan:   #00E5FF;
+  --alert-amber: #FFB300;
+  --abort-red:   #FF3B30;
+  --confirm-green: #7AFFAD;
+
+  /* Type */
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  font-family: var(--font-mono);
+  color: var(--hull-white);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--void);
+}
