@@ -20,7 +20,10 @@ export function RespawnHandler({ rocketRef, initialPosition }: Props) {
     if (!rocket) return;
     rocket.position.set(...initialPosition);
     rocket.rotation.set(0, 0, 0);
-  }, [respawnCount, rocketRef, initialPosition]);
+    // Only re-run on respawnCount change — initialPosition is a fresh array
+    // ref each render and would otherwise re-snap the rocket every frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [respawnCount]);
 
   return null;
 }

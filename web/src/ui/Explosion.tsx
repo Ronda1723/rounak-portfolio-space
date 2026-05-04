@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../state/useGameStore";
 
-const DURATION = 2400;
+const DURATION = 1100;
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; ttl: number; size: number; hue: number };
 
@@ -50,8 +50,10 @@ export function Explosion() {
     let raf = 0;
 
     const tick = () => {
+      let t = 1;
+      try {
       const now = performance.now();
-      const t = Math.min(1, (now - start) / DURATION);
+      t = Math.min(1, (now - start) / DURATION);
       const dt = 1 / 60;
 
       ctx.clearRect(0, 0, W, H);
@@ -80,16 +82,18 @@ export function Explosion() {
 
       // Particles
       for (const p of particles) {
-        if (p.life > p.ttl) continue;
+        if (p.life >= p.ttl) continue;
         p.life += dt;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.vx *= 0.985;
         p.vy *= 0.985;
-        const lf = 1 - p.life / p.ttl;
+        const lf = Math.max(0, 1 - p.life / p.ttl);
+        const r = p.size * lf;
+        if (r <= 0) continue;
         ctx.fillStyle = `hsla(${p.hue}, 90%, ${50 + lf * 40}%, ${lf})`;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * lf, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -103,6 +107,10 @@ export function Explosion() {
       if (t < 1) {
         raf = requestAnimationFrame(tick);
       } else {
+        resetSession();
+      }
+      } catch (err) {
+        console.error("Explosion render failed", err);
         resetSession();
       }
     };
